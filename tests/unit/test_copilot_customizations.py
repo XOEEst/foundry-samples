@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -7,6 +8,8 @@ SKILL_FILE = REPO_ROOT / ".github" / "skills" / "foundry-repo-audit" / "SKILL.md
 ISSUE_TEMPLATE = REPO_ROOT / ".github" / "skills" / "foundry-repo-audit" / "issue-template.md"
 WORKFLOW_FILE = REPO_ROOT / ".github" / "workflows" / "foundry-repo-audit.yml"
 PROMPT_FILE = REPO_ROOT / ".github" / "scripts" / "foundry-repo-audit-prompt.md"
+SETUP_WORKFLOW_FILE = REPO_ROOT / ".github" / "workflows" / "copilot-setup-steps.yml"
+MCP_CONFIG_FILE = REPO_ROOT / ".github" / "copilot" / "azure-foundry-mcp.json"
 
 
 def parse_frontmatter(path: Path) -> tuple[dict[str, str], str]:
@@ -19,6 +22,8 @@ def parse_frontmatter(path: Path) -> tuple[dict[str, str], str]:
     for line in frontmatter.splitlines():
         if not line.strip():
             continue
+        if line[:1].isspace():
+            continue
         key, value = line.split(":", 1)
         metadata[key.strip()] = value.strip().strip('"').strip("'")
 
@@ -30,9 +35,11 @@ def test_custom_agent_profile_has_required_metadata_and_instructions() -> None:
 
     assert metadata["name"] == "Foundry Repo Auditor"
     assert metadata["target"] == "github-copilot"
+    assert "Azure/*" in metadata["tools"]
+    assert "mcp-servers" in metadata
     assert "Azure AI Foundry agents" in metadata["description"]
     assert "foundry-repo-audit" in body
-    assert "microsoft-foundry" in body
+    assert "Azure MCP Server Foundry tools" in body
     assert "foundry-agent-audit::<relative-path>" in body
 
 
@@ -45,7 +52,7 @@ def test_repo_skill_matches_directory_and_mentions_core_workflow_steps() -> None
     assert "`agent.yaml`" in body
     assert "`sample.yaml`" in body
     assert "`AZURE_AI_PROJECT_ENDPOINT`" in body
-    assert "`microsoft-foundry` skill" in body
+    assert "Azure MCP Server Foundry tools" in body
     assert "`./issue-template.md`" in body
 
 
@@ -78,3 +85,18 @@ def test_prompt_file_mentions_skill_and_dedupe_token() -> None:
     assert "`AZURE_AI_PROJECT_ENDPOINT`" in content
     assert "`AZURE_AI_AGENT_NAME`" in content
     assert "foundry-agent-audit::<relative-path>" in content
+
+
+def test_setup_workflow_and_mcp_config_exist_for_coding_agent() -> None:
+    workflow = SETUP_WORKFLOW_FILE.read_text(encoding="utf-8")
+    config = json.loads(MCP_CONFIG_FILE.read_text(encoding="utf-8"))
+
+    assert "workflow_dispatch:" in workflow
+    assert "environment: copilot" in workflow
+    assert "azure/login@" in workflow
+    assert "AZURE_CLIENT_ID" in workflow
+    assert "AZURE_TENANT_ID" in workflow
+
+    assert config["mcpServers"]["Azure"]["command"] == "npx"
+    assert config["mcpServers"]["Azure"]["args"] == ["-y", "@azure/mcp@latest", "server", "start"]
+    assert config["mcpServers"]["Azure"]["tools"] == ["*"]

@@ -15,6 +15,8 @@ This repo includes a GitHub Copilot custom agent and a GitHub Actions workflow f
 - Custom agent: `.github/agents/foundry-repo-auditor.agent.md`
 - Repo skill: `.github/skills/foundry-repo-audit/SKILL.md`
 - Workflow: `.github/workflows/foundry-repo-audit.yml`
+- Azure MCP reference config: `.github/copilot/azure-foundry-mcp.json`
+- Copilot coding agent setup workflow: `.github/workflows/copilot-setup-steps.yml`
 
 ### Default behavior
 
@@ -38,6 +40,18 @@ To add the secret on GitHub.com:
 3. Select **New repository secret**.
 4. Name it `COPILOT_PAT`.
 5. Paste the token value and save.
+
+### Azure MCP / Foundry setup for GitHub coding agent
+
+To let the GitHub website coding agent or custom agent verify Foundry deployments in the cloud, finish the Azure MCP setup in GitHub:
+
+1. Open **Settings** > **Copilot** > **Coding agent**.
+2. In **MCP configuration**, paste the JSON from `.github/copilot/azure-foundry-mcp.json`.
+3. Open **Settings** > **Environments** and create an environment named `copilot`.
+4. Add environment secrets named `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`.
+5. Run the **copilot-setup-steps** workflow once from the **Actions** tab to validate Azure login for Copilot coding agent sessions.
+
+This repo now includes agent-level Azure MCP configuration in `.github/agents/foundry-repo-auditor.agent.md`, but the GitHub website experience still depends on the repository Copilot environment being configured correctly.
 
 ### How to run it from the GitHub website
 

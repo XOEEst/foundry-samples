@@ -1,6 +1,6 @@
 ---
 name: foundry-repo-audit
-description: Repository-specific workflow for discovering Azure AI Foundry agent candidates, resolving local deployment metadata, verifying deployment with microsoft-foundry, and preparing deduplicated GitHub issues.
+description: Repository-specific workflow for discovering Azure AI Foundry agent candidates, resolving local deployment metadata, verifying deployment with Azure MCP Foundry tools, and preparing deduplicated GitHub issues.
 argument-hint: "[optional path scope or sample family]"
 user-invocable: true
 ---
@@ -54,14 +54,16 @@ For each candidate, resolve deployment metadata in this order:
 
 When both a project endpoint and agent name are available:
 
-1. Invoke the `microsoft-foundry` skill before using Foundry tools.
-2. Use Foundry agent lookup tooling to check whether the agent exists for the resolved project endpoint and agent name.
+1. Use the Azure MCP Server Foundry tools configured for this repository or agent.
+2. Prefer Foundry agent listing and lookup operations to check whether the agent exists for the resolved project endpoint and agent name.
 3. Classify the result as:
    - `verified` when the agent lookup succeeds
    - `not deployed` when the lookup definitively reports the agent does not exist
    - `unknown` when credentials, connectivity, or incomplete metadata prevent verification
 
-When either the project endpoint or agent name is missing, set deployment state to `unknown` and list the missing fields.
+When either the project endpoint or agent name is missing, or when Azure MCP is not configured, set deployment state to `unknown` and list the missing fields.
+
+If you are running locally in a richer environment that also provides an external Foundry plugin skill, you may use it as an enhancement, but the cloud path must not depend on that plugin being present.
 
 ## GitHub issue workflow
 
@@ -88,6 +90,8 @@ For each candidate, report:
 ## Useful repo references
 
 - `.github/workflows/ado-automation.yml`
+- `.github/copilot/azure-foundry-mcp.json`
+- `.github/workflows/copilot-setup-steps.yml`
 - `samples/python/hosted-agents/agent-framework/echo-agent/agent.yaml`
 - `samples/csharp/FoundryA365/azure.yaml`
 - `.github/CODEOWNERS`
