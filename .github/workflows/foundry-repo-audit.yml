@@ -1,0 +1,79 @@
+name: Foundry Repo Audit
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      create_issues:
+        description: Create deduplicated GitHub issues instead of running in report-only mode
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: foundry-repo-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Validate Copilot token
+        env:
+          COPILOT_PAT: ${{ secrets.COPILOT_PAT }}
+        run: |
+          if [ -z "$COPILOT_PAT" ]; then
+            echo "::error::Missing repository secret COPILOT_PAT."
+            echo "::error::Create a fine-grained PAT with Copilot Requests permission and repository access to read contents and write issues."
+            exit 1
+          fi
+
+      - name: Run Foundry repo auditor
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+          CREATE_ISSUES: ${{ github.event_name == 'workflow_dispatch' && inputs.create_issues || 'false' }}
+        run: |
+          BASE_PROMPT="$(cat .github/scripts/foundry-repo-audit-prompt.md)"
+
+          if [ "$CREATE_ISSUES" = "true" ]; then
+            MODE_PROMPT="Create deduplicated GitHub issues when needed. Before creating any issue, search for the dedupe token and skip duplicates."
+          else
+            MODE_PROMPT="Run in report-only mode. Do not create or modify GitHub issues."
+          fi
+
+          FULL_PROMPT="${BASE_PROMPT}"$'\n\n'"${MODE_PROMPT}"
+
+          copilot \
+            --allow-all \
+            --enable-all-github-mcp-tools \
+            --no-ask-user \
+            --agent foundry-repo-auditor \
+            --prompt "$FULL_PROMPT" \
+            --silent \
+            --share "$RUNNER_TEMP/foundry-repo-audit.md"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-repo-audit-report
+          path: ${{ runner.temp }}/foundry-repo-audit.md
