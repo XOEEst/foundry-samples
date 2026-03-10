@@ -96,6 +96,10 @@ def test_setup_workflow_and_mcp_config_exist_for_coding_agent() -> None:
     assert "azure/login@" in workflow
     assert "AZURE_CLIENT_ID" in workflow
     assert "AZURE_TENANT_ID" in workflow
+    assert "AZURE_SUBSCRIPTION_ID" in workflow
+    assert "${{ vars.AZURE_CLIENT_ID }}" in workflow
+    assert "${{ vars.AZURE_TENANT_ID }}" in workflow
+    assert "${{ vars.AZURE_SUBSCRIPTION_ID }}" in workflow
 
     assert config["mcpServers"]["Azure"]["command"] == "npx"
     assert config["mcpServers"]["Azure"]["args"] == ["-y", "@azure/mcp@latest", "server", "start"]

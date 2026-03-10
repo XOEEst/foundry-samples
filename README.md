@@ -48,7 +48,7 @@ To let the GitHub website coding agent or custom agent verify Foundry deployment
 1. Open **Settings** > **Copilot** > **Coding agent**.
 2. In **MCP configuration**, paste the JSON from `.github/copilot/azure-foundry-mcp.json`.
 3. Open **Settings** > **Environments** and create an environment named `copilot`.
-4. Add environment secrets named `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`.
+4. Add environment variables named `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
 5. Run the **copilot-setup-steps** workflow once from the **Actions** tab to validate Azure login for Copilot coding agent sessions.
 
 This repo now includes agent-level Azure MCP configuration in `.github/agents/foundry-repo-auditor.agent.md`, but the GitHub website experience still depends on the repository Copilot environment being configured correctly.
