@@ -1,3 +1,4 @@
+# Optimization candidate A: switched model to gpt-4o-mini.
 # Copyright (c) Microsoft. All rights reserved.
 import asyncio
 import json
